@@ -1,0 +1,99 @@
+[[usagePage]]
+id = 0xff00
+name = 'iceflashprog'
+
+    [[usagePage.usage]]
+    id = 1
+    name = 'iceflashprog'
+    types = ['CA']
+
+    [[usagePage.usage]]
+    id = 2
+    name = 'Flash Page'
+    types = ['CL']
+
+    [[usagePage.usage]]
+    id = 3
+    name = 'Request'
+    types = ['CL']
+
+    [[usagePage.usage]]
+    id = 4
+    name = 'Response'
+    types = ['CL']
+
+    [[usagePage.usage]]
+    id = 17
+    name = 'Address'
+    types = ['DV']
+
+    [[usagePage.usage]]
+    id = 18
+    name = 'Data'
+    types = ['DV']
+
+    [[usagePage.usage]]
+    id = 19
+    name = 'Command ID'
+    types = ['DV']
+
+    [[usagePage.usage]]
+    id = 21
+    name = 'Status'
+    types = ['DV']
+
+[[applicationCollection]]
+usage = ['iceflashprog', 'iceflashprog']
+
+    [[applicationCollection.inputReport]]
+
+        [[applicationCollection.inputReport.logicalCollection]]
+        usage = ['iceflashprog', 'Flash Page']
+
+            [[applicationCollection.inputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Data']
+            logicalValueRange = [0, 255]
+            count = 256
+
+    [[applicationCollection.inputReport]]
+
+        [[applicationCollection.inputReport.logicalCollection]]
+        usage = ['iceflashprog', 'Response']
+
+            [[applicationCollection.inputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Status']
+            logicalValueRange = [0, 255]
+
+            [[applicationCollection.inputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Data']
+            logicalValueRange = [0, 255]
+            count = 3
+
+    [[applicationCollection.outputReport]]
+
+        [[applicationCollection.outputReport.logicalCollection]]
+        usage = ['iceflashprog', 'Flash Page']
+
+            [[applicationCollection.outputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Address']
+            logicalValueRange = [0, 255]
+            count = 3
+
+            [[applicationCollection.outputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Data']
+            logicalValueRange = [0, 255]
+            count = 256
+
+    [[applicationCollection.outputReport]]
+
+        [[applicationCollection.outputReport.logicalCollection]]
+        usage = ['iceflashprog', 'Request']
+
+            [[applicationCollection.outputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Command ID']
+            logicalValueRange = [0, 255]
+
+            [[applicationCollection.outputReport.logicalCollection.variableItem]]
+            usage = ['iceflashprog', 'Data']
+            logicalValueRange = [0, 255]
+            count = 3
