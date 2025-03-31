@@ -27,6 +27,7 @@ typedef enum {
     STATUS_INVALID_REQUEST,
     STATUS_INVALID_COMMAND_ID,
     STATUS_INVALID_FLASH_PAGE_READ,
+    STATUS_INVALID_FLASH_PAGE_WRITE,
     STATUS_LOCKED,
 } status_t;
 
@@ -90,11 +91,6 @@ spi_flash_powerdown_cb(void)
     send_response(STATUS_OK, NULL, 0);
 }
 
-void spi_flash_status_cb(uint8_t status)
-{
-    (void) status;
-}
-
 void
 spi_flash_jedec_id_cb(uint8_t manufacturer_id, uint16_t device_id)
 {
@@ -124,9 +120,9 @@ spi_flash_erase_sector_cb(void)
 }
 
 void
-spi_flash_write_cb(void)
+spi_flash_write_cb(bool verified)
 {
-    send_response(STATUS_OK, NULL, 0);
+    send_response(verified ? STATUS_OK : STATUS_INVALID_FLASH_PAGE_WRITE, NULL, 0);
 }
 
 

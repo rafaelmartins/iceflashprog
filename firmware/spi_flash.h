@@ -22,7 +22,7 @@ bool spi_flash_is_locked(void);
 
 // callbacks
 void spi_flash_erase_sector_cb(void);
-void spi_flash_write_cb(void);
+void spi_flash_write_cb(bool verified);
 void spi_flash_read_cb(const uint8_t *buf, uint32_t len);
 void spi_flash_status_cb(uint8_t status);
 void spi_flash_jedec_id_cb(uint8_t manufacturer_id, uint16_t device_id);

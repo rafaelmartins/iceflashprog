@@ -26,7 +26,9 @@ static bool waiting_wel_erase_sector = false;
 static bool waiting_wel_write = false;
 static bool waiting_erase_sector = false;
 static bool waiting_write = false;
+static bool waiting_write_verify = false;
 static bool start_write = false;
+static bool start_write_verify = false;
 static bool start_erase_sector = false;
 
 static uint8_t flash_buf[SPI_BUFFER_SIZE];
@@ -74,6 +76,13 @@ spi_flash_task(void)
         memcpy(buf, flash_buf, flash_buf_locked_len);
         instruction = buf[0];
         spi_start_transfer();
+        return true;
+    }
+
+    if (start_write_verify) {
+        start_write_verify = false;
+        waiting_write_verify = true;
+        spi_flash_read(flash_buf[1], flash_buf[2], flash_buf[3]);
         return true;
     }
 
@@ -219,6 +228,21 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
         break;
 
     case READ:
+        if (waiting_write_verify) {
+            bool verified = true;
+            for (uint16_t i = 4; i < (SPI_FLASH_PAGE_SIZE + 4); i++) {
+                if (flash_buf[i] != buf[i]) {
+                    verified = false;
+                    break;
+                }
+            }
+
+            spi_flash_write_cb(verified);
+            waiting_write_verify = false;
+            flash_buf_locked_len = 0;
+            break;
+        }
+
         spi_flash_read_cb(buf + 4, buf_len - 4);
         break;
 
@@ -226,25 +250,26 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
         if (waiting_wel_erase_sector && (buf[1] & (1 << 1))) {
             waiting_wel_erase_sector = false;
             start_erase_sector = true;
+            break;
         }
-        else if (waiting_wel_write && (buf[1] & (1 << 1))) {
+        if (waiting_wel_write && (buf[1] & (1 << 1))) {
             waiting_wel_write = false;
             start_write = true;
+            break;
         }
-        else if (waiting_erase_sector && ((buf[1] & (1 << 0)) == 0)) {
+        if (waiting_erase_sector && ((buf[1] & (1 << 0)) == 0)) {
             waiting_erase_sector = false;
             TIM3->CR1 &= ~TIM_CR1_CEN;
             spi_flash_erase_sector_cb();
             flash_buf_locked_len = 0;
+            break;
         }
-        else if (waiting_write && ((buf[1] & (1 << 0)) == 0)) {
+        if (waiting_write && ((buf[1] & (1 << 0)) == 0)) {
             waiting_write = false;
+            start_write_verify = true;
             TIM3->CR1 &= ~TIM_CR1_CEN;
-            spi_flash_write_cb();
-            flash_buf_locked_len = 0;
+            break;
         }
-
-        spi_flash_status_cb(buf[1]);
         break;
 
     case WRITE_ENABLE:

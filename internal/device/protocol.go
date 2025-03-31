@@ -3,6 +3,13 @@ package device
 import (
 	"errors"
 	"fmt"
+	"slices"
+)
+
+const (
+	FlashPageSize   = 0x000100
+	FlashSectorSize = 0x001000
+	FlashBlockSize  = 0x010000
 )
 
 type operation = byte
@@ -41,23 +48,26 @@ const (
 	statusInvalidRequest
 	statusInvalidCommandId
 	statusInvalidFlashPageRead
+	statusInvalidFlashPageWrite
 	statusLocked
 )
 
 var (
-	ErrUnpowered            = errors.New("iceflashprog: protocol: flash chip is unpowered")
-	ErrInvalidRequest       = errors.New("iceflashprog: protocol: invalid request")
-	ErrInvalidCommandId     = errors.New("iceflashprog: protocol: invalid command id")
-	ErrInvalidFlashPageRead = errors.New("iceflashprog: protocol: invalid flash page read")
-	ErrLocked               = errors.New("iceflashprog: protocol: device is locked")
+	ErrUnpowered             = errors.New("iceflashprog: protocol: flash chip is unpowered")
+	ErrInvalidRequest        = errors.New("iceflashprog: protocol: invalid request")
+	ErrInvalidCommandId      = errors.New("iceflashprog: protocol: invalid command id")
+	ErrInvalidFlashPageRead  = errors.New("iceflashprog: protocol: invalid flash page read")
+	ErrInvalidFlashPageWrite = errors.New("iceflashprog: protocol: invalid flash page write, failed to verify")
+	ErrLocked                = errors.New("iceflashprog: protocol: device is locked")
 
 	errorMap = map[status]error{
-		statusOk:                   nil,
-		statusUnpowered:            ErrUnpowered,
-		statusInvalidRequest:       ErrInvalidRequest,
-		statusInvalidCommandId:     ErrInvalidCommandId,
-		statusInvalidFlashPageRead: ErrInvalidFlashPageRead,
-		statusLocked:               ErrLocked,
+		statusOk:                    nil,
+		statusUnpowered:             ErrUnpowered,
+		statusInvalidRequest:        ErrInvalidRequest,
+		statusInvalidCommandId:      ErrInvalidCommandId,
+		statusInvalidFlashPageRead:  ErrInvalidFlashPageRead,
+		statusInvalidFlashPageWrite: ErrInvalidFlashPageWrite,
+		statusLocked:                ErrLocked,
 	}
 
 	operationMap = map[operation]struct {
@@ -106,7 +116,7 @@ func (d *Device) opCall(op operation, data []byte) ([]byte, error) {
 
 	switch obj.responseId {
 	case reportFlashPage:
-		if l := len(data); l != 256 {
+		if l := len(data); l != FlashPageSize {
 			return nil, fmt.Errorf("iceflashprog: protocol: invalid response data length for report %d: %d", obj.responseId, l)
 		}
 		return data, nil
@@ -160,7 +170,15 @@ func (d *Device) ReadFlashPage(addr uint32) ([]byte, error) {
 }
 
 func (d *Device) WriteFlashPage(addr uint32, data []byte) error {
-	_, err := d.opCall(opWrite, append([]byte{byte(addr >> 16), byte(addr >> 8), byte(addr)}, data...))
+	if l := len(data); l > FlashPageSize {
+		return fmt.Errorf("iceflashprog: protocol: got more data to write to flash than one page: %d", l)
+	}
+
+	data2 := slices.Clone(data)
+	for range FlashPageSize - len(data) {
+		data2 = append(data2, 0xff)
+	}
+	_, err := d.opCall(opWrite, append([]byte{byte(addr >> 16), byte(addr >> 8), byte(addr)}, data2...))
 	return err
 }
 
