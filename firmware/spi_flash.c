@@ -46,8 +46,8 @@ spi_flash_init(void)
     GPIOB->MODER |= GPIO_MODER_MODER0_0;
     GPIOB->BSRR = GPIO_BSRR_BS_0;
 
-    TIM3->PSC = SystemCoreClock / 1000 - 1;
-    TIM3->ARR = 9;  // 10ms
+    TIM3->PSC = SystemCoreClock / 10000 - 1;  // 0.1ms per tick
+    TIM3->ARR = 10 - 1;  // 1ms
     TIM3->DIER = TIM_DIER_UIE;
 
     spi_init();
