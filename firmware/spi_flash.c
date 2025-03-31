@@ -233,11 +233,13 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
             waiting_erase_sector = false;
             TIM3->CR1 &= ~TIM_CR1_CEN;
             spi_flash_erase_sector_cb();
+            flash_buf_locked_len = 0;
         }
         else if (waiting_write && ((buf[1] & (1 << 0)) == 0)) {
             waiting_write = false;
             TIM3->CR1 &= ~TIM_CR1_CEN;
             spi_flash_write_cb();
+            flash_buf_locked_len = 0;
         }
 
         spi_flash_status_cb(buf[1]);

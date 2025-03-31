@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Rafael G. Martins <rafael@rafaelmartins.eng.br>
+// SPDX-FileCopyrightText: 2025 Rafael G. Martins <rafael@rafaelmartins.eng.br>
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <stdlib.h>

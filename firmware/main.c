@@ -25,6 +25,7 @@ typedef enum {
     STATUS_INVALID_REQUEST,
     STATUS_INVALID_COMMAND_ID,
     STATUS_INVALID_FLASH_PAGE_READ,
+    STATUS_LOCKED,
 } status_t;
 
 typedef struct __attribute__((packed)) {
@@ -167,7 +168,8 @@ usbd_out_cb(uint8_t ept)
             buf_idx = 0;
             set_flash_rx = false;
             flash_page_request_t *request = (flash_page_request_t*) buf;
-            spi_flash_write(request->address[0], request->address[1], request->address[2], request->data, sizeof(request->data));
+            if (!spi_flash_write(request->address[0], request->address[1], request->address[2], request->data, sizeof(request->data)))
+                send_response(STATUS_LOCKED, NULL, 0);
             return;
         }
 
@@ -196,23 +198,28 @@ usbd_out_cb(uint8_t ept)
 
         switch ((command_t) request->command) {
         case COMMAND_POWER_UP:
-            spi_flash_powerup();
+            if (!spi_flash_powerup())
+                send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         case COMMAND_POWER_DOWN:
-            spi_flash_powerdown();
+            if (!spi_flash_powerdown())
+                send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         case COMMAND_JEDEC_ID:
-            spi_flash_jedec_id();
+            if (!spi_flash_jedec_id())
+                send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         case COMMAND_READ:
-            spi_flash_read(request->data[0], request->data[1], request->data[2]);
+            if (!spi_flash_read(request->data[0], request->data[1], request->data[2]))
+                send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         case COMMAND_ERASE_SECTOR:
-            spi_flash_erase_sector(request->data[0], request->data[1], request->data[2]);
+            if (!spi_flash_erase_sector(request->data[0], request->data[1], request->data[2]))
+                send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         default:
