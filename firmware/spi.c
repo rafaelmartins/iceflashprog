@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <stm32f0xx.h>

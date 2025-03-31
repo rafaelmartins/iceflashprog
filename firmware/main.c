@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Rafael G. Martins <rafael@rafaelmartins.eng.br>
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -285,7 +287,7 @@ main(void)
     usbd_init();
     spi_flash_init();
 
-    while (1) {
+    while (true) {
         if (spi_flash_task())
             continue;
 

@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Rafael G. Martins <rafael@rafaelmartins.eng.br>
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <usbd.h>

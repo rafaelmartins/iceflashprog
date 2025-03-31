@@ -9,7 +9,6 @@
 #define SPI_FLASH_PAGE_SIZE 256
 
 void spi_flash_init(void);
-// bool spi_flash_start_transfer(const uint8_t *tx, uint32_t len);
 bool spi_flash_task(void);
 
 bool spi_flash_read(uint8_t addr0, uint8_t addr1, uint8_t addr2);
@@ -21,6 +20,7 @@ bool spi_flash_powerup(void);
 bool spi_flash_powerdown(void);
 bool spi_flash_is_locked(void);
 
+// callbacks
 void spi_flash_erase_sector_cb(void);
 void spi_flash_write_cb(void);
 void spi_flash_read_cb(const uint8_t *buf, uint32_t len);
