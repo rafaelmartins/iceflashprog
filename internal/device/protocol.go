@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	FlashSize       = 0x200000 // FIXME
 	FlashPageSize   = 0x000100
 	FlashSectorSize = 0x001000
 	FlashBlockSize  = 0x010000
