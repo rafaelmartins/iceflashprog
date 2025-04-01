@@ -98,15 +98,13 @@ func (d *Device) Listen() error {
 		}
 
 		if d.result == nil {
-			return fmt.Errorf("iceflashprog: got result without any request pending: %q", buf)
+			return fmt.Errorf("iceflashprog: got result without any request pending: %+v", buf)
 		}
 
 		d.result <- result{
 			id:   id,
 			data: buf,
 		}
-		close(d.result)
-		d.result = nil
 	}
 }
 
@@ -123,10 +121,18 @@ func (d *Device) call(id byte, data []byte) (byte, []byte, error) {
 	}
 
 	r := <-d.result
+
+	close(d.result)
+	d.result = nil
+
 	return r.id, r.data, nil
 }
 
 func (d *Device) Close() error {
+	if err := d.PowerDown(); err != nil {
+		return err
+	}
+
 	close(d.listen)
 	return d.dev.Close()
 }

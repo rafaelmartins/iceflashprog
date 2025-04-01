@@ -21,6 +21,8 @@ const (
 	opRead
 	opWrite
 	opEraseSector
+	opEraseBlock
+	opEraseChip
 )
 
 type data = byte
@@ -31,6 +33,8 @@ const (
 	dataJedecId
 	dataRead
 	dataEraseSector
+	dataEraseBlock
+	dataEraseChip
 )
 
 type report = byte
@@ -81,6 +85,8 @@ var (
 		opRead:        {dataRead, 2, 1},
 		opWrite:       {0, 1, 2},
 		opEraseSector: {dataEraseSector, 2, 2},
+		opEraseBlock:  {dataEraseBlock, 2, 2},
+		opEraseChip:   {dataEraseChip, 2, 2},
 	}
 )
 
@@ -184,5 +190,15 @@ func (d *Device) WriteFlashPage(addr uint32, data []byte) error {
 
 func (d *Device) EraseFlashSector(addr uint32) error {
 	_, err := d.opCall(opEraseSector, []byte{byte(addr >> 16), byte(addr >> 8), byte(addr)})
+	return err
+}
+
+func (d *Device) EraseFlashBlock(addr uint32) error {
+	_, err := d.opCall(opEraseBlock, []byte{byte(addr >> 16), byte(addr >> 8), byte(addr)})
+	return err
+}
+
+func (d *Device) EraseChip() error {
+	_, err := d.opCall(opEraseChip, []byte{0, 0, 0})
 	return err
 }

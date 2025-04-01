@@ -20,16 +20,24 @@ typedef enum {
     JEDEC_ID = 0x9f,
     POWER_UP = 0xab,
     POWER_DOWN = 0xb9,
+    ERASE_CHIP = 0xc7,
+    ERASE_BLOCK = 0xd8,
 } instruction_t;
 
 static bool waiting_wel_erase_sector = false;
+static bool waiting_wel_erase_block = false;
+static bool waiting_wel_erase_chip = false;
 static bool waiting_wel_write = false;
 static bool waiting_erase_sector = false;
+static bool waiting_erase_block = false;
+static bool waiting_erase_chip = false;
 static bool waiting_write = false;
 static bool waiting_write_verify = false;
 static bool start_write = false;
 static bool start_write_verify = false;
 static bool start_erase_sector = false;
+static bool start_erase_block = false;
+static bool start_erase_chip = false;
 
 static uint8_t flash_buf[SPI_BUFFER_SIZE];
 static uint32_t flash_buf_locked_len = 0;
@@ -59,7 +67,7 @@ spi_flash_init(void)
 bool
 spi_flash_task(void)
 {
-    if (start_erase_sector || start_write) {
+    if (start_erase_sector || start_erase_block || start_erase_chip || start_write) {
         uint8_t *buf = spi_lock(flash_buf_locked_len);
         if (buf == NULL)
             return false;
@@ -67,6 +75,14 @@ spi_flash_task(void)
         if (start_erase_sector) {
             start_erase_sector = false;
             waiting_erase_sector = true;
+        }
+        else if (start_erase_block) {
+            start_erase_block = false;
+            waiting_erase_block = true;
+        }
+        else if (start_erase_chip) {
+            start_erase_chip = false;
+            waiting_erase_chip = true;
         }
         else if (start_write) {
             start_write = false;
@@ -151,6 +167,47 @@ spi_flash_erase_sector(uint8_t addr0, uint8_t addr1, uint8_t addr2)
     flash_buf[3] = addr2;
 
     waiting_wel_erase_sector = true;
+    buf[0] = instruction = WRITE_ENABLE;
+    return spi_start_transfer();
+}
+
+
+bool
+spi_flash_erase_block(uint8_t addr0, uint8_t addr1, uint8_t addr2)
+{
+    if (flash_buf_locked_len != 0)
+        return false;
+
+    uint8_t *buf = spi_lock(1);
+    if (buf == NULL)
+        return false;
+
+    flash_buf_locked_len = 4;
+    flash_buf[0] = ERASE_BLOCK;
+    flash_buf[1] = addr0;
+    flash_buf[2] = addr1;
+    flash_buf[3] = addr2;
+
+    waiting_wel_erase_block = true;
+    buf[0] = instruction = WRITE_ENABLE;
+    return spi_start_transfer();
+}
+
+
+bool
+spi_flash_erase_chip(void)
+{
+    if (flash_buf_locked_len != 0)
+        return false;
+
+    uint8_t *buf = spi_lock(1);
+    if (buf == NULL)
+        return false;
+
+    flash_buf_locked_len = 1;
+    flash_buf[0] = ERASE_CHIP;
+
+    waiting_wel_erase_chip = true;
     buf[0] = instruction = WRITE_ENABLE;
     return spi_start_transfer();
 }
@@ -252,6 +309,16 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
             start_erase_sector = true;
             break;
         }
+        if (waiting_wel_erase_block && (buf[1] & (1 << 1))) {
+            waiting_wel_erase_block = false;
+            start_erase_block = true;
+            break;
+        }
+        if (waiting_wel_erase_chip && (buf[1] & (1 << 1))) {
+            waiting_wel_erase_chip = false;
+            start_erase_chip = true;
+            break;
+        }
         if (waiting_wel_write && (buf[1] & (1 << 1))) {
             waiting_wel_write = false;
             start_write = true;
@@ -261,6 +328,20 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
             waiting_erase_sector = false;
             TIM3->CR1 &= ~TIM_CR1_CEN;
             spi_flash_erase_sector_cb();
+            flash_buf_locked_len = 0;
+            break;
+        }
+        if (waiting_erase_block && ((buf[1] & (1 << 0)) == 0)) {
+            waiting_erase_block = false;
+            TIM3->CR1 &= ~TIM_CR1_CEN;
+            spi_flash_erase_block_cb();
+            flash_buf_locked_len = 0;
+            break;
+        }
+        if (waiting_erase_chip && ((buf[1] & (1 << 0)) == 0)) {
+            waiting_erase_chip = false;
+            TIM3->CR1 &= ~TIM_CR1_CEN;
+            spi_flash_erase_chip_cb();
             flash_buf_locked_len = 0;
             break;
         }
@@ -291,6 +372,10 @@ spi_transfer_complete_cb(const uint8_t *buf, uint32_t buf_len)
     case POWER_DOWN:
         GPIOB->BSRR = GPIO_BSRR_BS_0;
         spi_flash_powerdown_cb();
+        break;
+
+    case ERASE_CHIP:
+    case ERASE_BLOCK:
         break;
     }
 }

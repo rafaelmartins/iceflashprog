@@ -19,6 +19,8 @@ typedef enum {
     COMMAND_JEDEC_ID,
     COMMAND_READ,
     COMMAND_ERASE_SECTOR,
+    COMMAND_ERASE_BLOCK,
+    COMMAND_ERASE_CHIP,
 } command_t;
 
 typedef enum {
@@ -115,6 +117,18 @@ spi_flash_read_cb(const uint8_t *buff, uint32_t len)
 
 void
 spi_flash_erase_sector_cb(void)
+{
+    send_response(STATUS_OK, NULL, 0);
+}
+
+void
+spi_flash_erase_block_cb(void)
+{
+    send_response(STATUS_OK, NULL, 0);
+}
+
+void
+spi_flash_erase_chip_cb(void)
 {
     send_response(STATUS_OK, NULL, 0);
 }
@@ -217,6 +231,16 @@ usbd_out_cb(uint8_t ept)
 
         case COMMAND_ERASE_SECTOR:
             if (!spi_flash_erase_sector(request->data[0], request->data[1], request->data[2]))
+                send_response(STATUS_LOCKED, NULL, 0);
+            break;
+
+        case COMMAND_ERASE_BLOCK:
+            if (!spi_flash_erase_block(request->data[0], request->data[1], request->data[2]))
+                send_response(STATUS_LOCKED, NULL, 0);
+            break;
+
+        case COMMAND_ERASE_CHIP:
+            if (!spi_flash_erase_chip())
                 send_response(STATUS_LOCKED, NULL, 0);
             break;
 
