@@ -76,6 +76,7 @@ send_response(status_t status, uint8_t *data, uint32_t data_len)
     if (data != NULL)
         memcpy(response->data, data, data_len <= 3 ? data_len : 3);
     set_response = true;
+    usbd_in_cb(1);
 }
 
 
@@ -113,6 +114,7 @@ spi_flash_read_cb(const uint8_t *buff, uint32_t len)
     memcpy(response->data, buff, len);
     buf_idx = 0;
     set_flash_tx = true;
+    usbd_in_cb(1);
 }
 
 void

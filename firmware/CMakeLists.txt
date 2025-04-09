@@ -11,7 +11,7 @@ FetchContent_Declare(cmake_cmsis_stm32
 )
 FetchContent_Declare(usbd_fs_stm32
     GIT_REPOSITORY https://github.com/rafaelmartins/usbd-fs-stm32.git
-    GIT_TAG 21315e53c03184b73803ac9815df71ba031275f5
+    GIT_TAG 9b7e0f61bd7c3100fd3cf54745f8cd701cd23bfd
 )
 FetchContent_MakeAvailable(
     cmake_cmsis_stm32
