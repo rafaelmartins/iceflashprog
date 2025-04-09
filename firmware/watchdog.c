@@ -12,6 +12,11 @@ watchdog_init(void)
     RCC->CSR |= RCC_CSR_LSION;
     while ((RCC->CSR & RCC_CSR_LSIRDY) != RCC_CSR_LSIRDY);
 
+#ifdef WATCHDOG_STOP_ON_HALT
+    RCC->APB2ENR |= RCC_APB2ENR_DBGMCUEN;
+    DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;
+#endif
+
     IWDG->KR = 0xcccc;
     IWDG->KR = 0x5555;
     IWDG->PR = IWDG_PR_PR;

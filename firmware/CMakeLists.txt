@@ -34,6 +34,11 @@ target_compile_definitions(usbd-fs-stm32 INTERFACE
     USBD_EP1_TYPE=INTERRUPT
 )
 
+target_compile_definitions(iceflashprog PRIVATE
+    # SPI_MAX_FREQ
+    # WATCHDOG_STOP_ON_HALT
+)
+
 target_link_libraries(iceflashprog PRIVATE
     usbd-fs-stm32
 )
