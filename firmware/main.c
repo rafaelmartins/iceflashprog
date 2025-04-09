@@ -12,6 +12,7 @@
 
 #include "spi.h"
 #include "spi_flash.h"
+#include "watchdog.h"
 
 typedef enum {
     COMMAND_POWER_UP = 1,
@@ -56,6 +57,7 @@ typedef struct __attribute__((packed)) {
     uint8_t data[3];
 } command_response_t;
 
+static bool wip = false;
 static bool powered = false;
 
 static bool set_flash_rx = false;
@@ -133,6 +135,7 @@ void
 spi_flash_erase_chip_cb(void)
 {
     send_response(STATUS_OK, NULL, 0);
+    watchdog_set_reload_default();
 }
 
 void
@@ -156,6 +159,7 @@ usbd_in_cb(uint8_t ept)
             usbd_in(ept, buf + buf_idx, sizeof(flash_page_response_t) - buf_idx);
             buf_idx = 0;
             set_flash_tx = false;
+            wip = false;
             usbd_out_enable(1);
         }
         return;
@@ -164,6 +168,7 @@ usbd_in_cb(uint8_t ept)
     if (set_response) {
         usbd_in(ept, buf, sizeof(command_response_t));
         set_response = false;
+        wip = false;
         usbd_out_enable(1);
     }
 }
@@ -193,6 +198,8 @@ usbd_out_cb(uint8_t ept)
 
     uint8_t buff[USBD_EP1_OUT_SIZE];
     uint16_t len = usbd_out(ept, buff, sizeof(buff), false);
+
+    wip = true;
 
     switch (buff[0]) {
     case 1:
@@ -242,8 +249,11 @@ usbd_out_cb(uint8_t ept)
             break;
 
         case COMMAND_ERASE_CHIP:
-            if (!spi_flash_erase_chip())
-                send_response(STATUS_LOCKED, NULL, 0);
+            if (spi_flash_erase_chip()) {
+                watchdog_set_reload_erase_chip();
+                break;
+            }
+            send_response(STATUS_LOCKED, NULL, 0);
             break;
 
         default:
@@ -267,6 +277,13 @@ usbd_set_address_hook_cb(uint8_t addr)
 {
     (void) addr;
     GPIOA->BSRR = GPIO_BSRR_BR_15;
+}
+
+void
+usbd_sof_cb(void)
+{
+    if (!wip)
+        watchdog_reload();
 }
 
 void
@@ -299,13 +316,13 @@ clock_init(void)
 
     RCC->CFGR &= ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE | RCC_CFGR_SW);
     RCC->CFGR |= RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE_DIV1 | RCC_CFGR_SW_PLL;
-    while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
 
     SystemCoreClock = 36000000;
 #else
     RCC->CFGR &= ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE | RCC_CFGR_SW);
     RCC->CFGR |= RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE_DIV1 | RCC_CFGR_SW_HSI48;
-    while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI48);
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI48);
 
     SystemCoreClock = 48000000;
 #endif
@@ -323,6 +340,7 @@ main(void)
     GPIOA->MODER |= GPIO_MODER_MODER15_0;
     GPIOA->BSRR = GPIO_BSRR_BR_15;
 
+    watchdog_init();
     usbd_init();
     spi_flash_init();
 

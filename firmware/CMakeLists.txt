@@ -11,7 +11,7 @@ FetchContent_Declare(cmake_cmsis_stm32
 )
 FetchContent_Declare(usbd_fs_stm32
     GIT_REPOSITORY https://github.com/rafaelmartins/usbd-fs-stm32.git
-    GIT_TAG 9b7e0f61bd7c3100fd3cf54745f8cd701cd23bfd
+    GIT_TAG 2cd61442a470691a20f88d944446cfcffc83eb1b
 )
 FetchContent_MakeAvailable(
     cmake_cmsis_stm32
@@ -25,6 +25,7 @@ add_executable(iceflashprog
     main.c
     spi.c
     spi_flash.c
+    watchdog.c
 )
 
 target_compile_definitions(usbd-fs-stm32 INTERFACE

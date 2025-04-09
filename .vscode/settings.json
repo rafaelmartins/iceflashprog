@@ -1,7 +1,4 @@
 {
     "cmake.sourceDirectory": "${workspaceFolder}/firmware",
-    "cmake.buildDirectory": "${workspaceFolder}/firmware/build",
-    "files.associations": {
-        "spi.h": "c"
-    }
+    "cmake.buildDirectory": "${workspaceFolder}/firmware/build"
 }
