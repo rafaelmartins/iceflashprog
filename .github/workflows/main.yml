@@ -61,7 +61,7 @@ jobs:
         run: |
           mkdir -p iceflashprog-linux-amd64
           GOOS=linux GOARCH=amd64 go build -C iceflashprog -o ../iceflashprog-linux-amd64/iceflashprog
-          VERSION="$(./iceflashprog-linux-amd64/iceflashprog -V)"
+          VERSION="$(./iceflashprog-linux-amd64/iceflashprog -V | sed s/^v//)"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > ./iceflashprog-linux-amd64/README
           cp -v iceflashprog/LICENSE ./iceflashprog-linux-amd64/LICENSE
