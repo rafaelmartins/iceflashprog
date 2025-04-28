@@ -1,6 +1,6 @@
 module rafaelmartins.com/p/iceflashprog
 
-go 1.23
+go 1.24
 
 require (
 	github.com/schollz/progressbar/v3 v3.18.0

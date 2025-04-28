@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"slices"
 
 	"github.com/schollz/progressbar/v3"
@@ -20,6 +21,7 @@ var (
 	skipErase    = flag.Bool("n", false, "do not erase flash before writing")
 	read         = flag.Bool("r", false, "read flash memory to file")
 	serialNumber = flag.String("s", "", "device serial number")
+	version      = flag.Bool("V", false, "show version and exit")
 )
 
 func readToFile(dev *device.Device, f string) error {
@@ -101,6 +103,16 @@ func main() {
 	defer cleanup.Cleanup()
 
 	flag.Parse()
+
+	if *version {
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			fmt.Println(bi.Main.Version)
+			return
+		}
+
+		fmt.Println("UNKNOWN")
+		cleanup.Exit(1)
+	}
 
 	dev, err := device.New(*serialNumber)
 	if err != nil {

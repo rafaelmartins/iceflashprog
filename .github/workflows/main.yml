@@ -1,0 +1,143 @@
+name: Main
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: main
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  XPACK_ARM_TOOLCHAIN_VERSION: "14.2.1-1.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: iceflashprog
+          fetch-depth: 0
+
+      - name: Install arm-none-eabi toolchain
+        run: |
+          wget \
+            "https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v${XPACK_ARM_TOOLCHAIN_VERSION}/xpack-arm-none-eabi-gcc-${XPACK_ARM_TOOLCHAIN_VERSION}-linux-x64.tar.gz"{,.sha}
+
+          sha256sum \
+            --check \
+            "xpack-arm-none-eabi-gcc-${XPACK_ARM_TOOLCHAIN_VERSION}-linux-x64.tar.gz.sha"
+
+          tar \
+            --extract \
+            --verbose \
+            --file="xpack-arm-none-eabi-gcc-${XPACK_ARM_TOOLCHAIN_VERSION}-linux-x64.tar.gz"
+
+          echo "${{ github.workspace }}/xpack-arm-none-eabi-gcc-${XPACK_ARM_TOOLCHAIN_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+            go-version-file: iceflashprog/go.mod
+            cache-dependency-path: iceflashprog/go.sum
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y --no-install-recommends ninja-build
+
+      - name: Build iceflashprog
+        id: build
+        run: |
+          mkdir -p iceflashprog-linux-amd64
+          GOOS=linux GOARCH=amd64 go build -C iceflashprog -o ../iceflashprog-linux-amd64/iceflashprog
+          VERSION="$(./iceflashprog-linux-amd64/iceflashprog -V)"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > ./iceflashprog-linux-amd64/README
+          cp -v iceflashprog/LICENSE ./iceflashprog-linux-amd64/LICENSE
+          cp -v iceflashprog/share/udev/* ./iceflashprog-linux-amd64/
+          mv ./iceflashprog-linux-amd64 "./iceflashprog-linux-amd64-${VERSION}/"
+          tar -cvJf "iceflashprog-linux-amd64-${VERSION}.tar.xz" "iceflashprog-linux-amd64-${VERSION}/"
+
+          mkdir -p "iceflashprog-linux-arm64-${VERSION}"
+          GOOS=linux GOARCH=arm64 go build -C iceflashprog -o "../iceflashprog-linux-arm64-${VERSION}/iceflashprog"
+          echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > "./iceflashprog-linux-arm64-${VERSION}/README"
+          cp -v iceflashprog/LICENSE "./iceflashprog-linux-arm64-${VERSION}/LICENSE"
+          cp -v iceflashprog/share/udev/* "./iceflashprog-linux-arm64-${VERSION}/"
+          tar -cvJf "iceflashprog-linux-arm64-${VERSION}.tar.xz" "iceflashprog-linux-arm64-${VERSION}/"
+
+          mkdir -p "iceflashprog-darwin-arm64-${VERSION}"
+          GOOS=darwin GOARCH=arm64 go build -C iceflashprog -o "../iceflashprog-darwin-arm64-${VERSION}/iceflashprog"
+          echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > "./iceflashprog-darwin-arm64-${VERSION}/README"
+          cp -v iceflashprog/LICENSE "./iceflashprog-darwin-arm64-${VERSION}/LICENSE"
+          tar -cvJf "iceflashprog-darwin-arm64-${VERSION}.tar.xz" "iceflashprog-darwin-arm64-${VERSION}/"
+
+          mkdir -p "iceflashprog-windows-amd64-${VERSION}"
+          GOOS=windows GOARCH=amd64 go build -C iceflashprog -o "../iceflashprog-windows-amd64-${VERSION}/iceflashprog.exe"
+          echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > "./iceflashprog-windows-amd64-${VERSION}/README.txt"
+          cp -v iceflashprog/LICENSE "./iceflashprog-windows-amd64-${VERSION}/LICENSE.txt"
+          zip -r9 "iceflashprog-windows-amd64-${VERSION}.zip" "iceflashprog-windows-amd64-${VERSION}"
+
+      - name: Build firmware
+        run: |
+          cmake \
+            -B ${{ github.workspace }}/build \
+            -D CMAKE_BUILD_TYPE=Release \
+            -S ${{ github.workspace }}/iceflashprog/firmware \
+            -G Ninja
+
+          cmake \
+            --build ${{ github.workspace }}/build \
+            --target all
+
+          mkdir "iceflashprog-firmware-${{ steps.build.outputs.version }}"
+          cp -v build/iceflashprog.dfu "iceflashprog-firmware-${{ steps.build.outputs.version }}/"
+          echo "Please visit https://rafaelmartins.com/p/iceflashprog for usage instructions!" > "./iceflashprog-firmware-${{ steps.build.outputs.version }}/README"
+          cp -v iceflashprog/LICENSE "./iceflashprog-firmware-${{ steps.build.outputs.version }}/LICENSE"
+          zip -r9 "iceflashprog-firmware-${{ steps.build.outputs.version }}.zip" "iceflashprog-firmware-${{ steps.build.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            iceflashprog-*.zip
+            iceflashprog-*.tar.xz
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Get release metadata
+        id: meta
+        run: |
+          version="$(echo "${{ github.ref }}" | sed 's,refs/tags/v,,')"
+          echo "name=$(git tag -l --format="%(contents:subject)" "v${version}")" >> $GITHUB_OUTPUT
+          git tag -l --format="%(contents:body)" "v${version}" > body.md
+
+      - uses: ncipollo/release-action@2c591bcc8ecdcd2db72b97d6147f871fcd833ba5
+        with:
+          name: ${{ steps.meta.outputs.name }}
+          artifacts: dist/iceflashprog-*
+          bodyFile: body.md
+          generateReleaseNotes: true
