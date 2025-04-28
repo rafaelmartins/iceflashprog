@@ -1,5 +1,5 @@
 # iceflashprog
-A simple USB flash programmer for iCE40-based FPGA develpmnet boards.
+A simple USB flash programmer for `iCE40`-based FPGA development boards.
 
 
 ## Description
@@ -83,7 +83,7 @@ If the command reports success, just reset the device, by removing and connectin
 
 This project includes a program to allow writing and reading the flash memory contained in the FPGA development board from a computer. A prebuilt binary is available from the release files, for Linux (`amd64` and `arm64`), MacOS (`arm64`) and Windows (`amd64`). Other architectures are supported, but users would need to rebuild the application from source. It is written in pure `Go`, so a `Go` compiler `>= 1.24.0` is required for that.
 
-Linux users may need to install a `udev` `.rules` file that is included with the prebuilt binary. MacOS users may need to cleanup quarantine xattrs from the binary before running it because the binary is not signed. As these are operating system quirks not specific to this software, solve it is out of scope of this documentation.
+Linux users may need to install a `udev` `.rules` file that is included with the prebuilt binary. MacOS users may need to cleanup quarantine xattrs from the binary before running because it is not signed. As these are operating system quirks not specific to this software, solve it is out of scope of this documentation.
 
 To check if everything is connected and powered correctly, type:
 ```shell
