@@ -13,7 +13,7 @@ The serial port interface available on the `UEXT` header is not implemented (yet
 This project includes the firmware and the host software required to interact with the USB device.
 
 > [!WARNING]
-> As of version 0.1.0, the host software only works with 16 Megabit Serial Flash Memories, like the ones installed to the Olimex boards.
+> The host software, in its initial version 0.1.0, only supports 16 Megabit Serial Flash Memories, such as those used in Olimex boards.
 
 ## Hardware
 
