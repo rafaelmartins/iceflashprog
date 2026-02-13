@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Rafael G. Martins <rafael@rafaelmartins.eng.br>
 # SPDX-License-Identifier: GPL-2.0-only
 
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.25)
 
 include(FetchContent)
 
