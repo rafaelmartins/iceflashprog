@@ -27,10 +27,10 @@ cmake --build build
 | File | Description |
 |------|-------------|
 | `iceflashprog.elf` | ELF binary with debug symbols |
+| `iceflashprog.elf.map` | Linker map file |
 | `iceflashprog.bin` | Raw binary image |
 | `iceflashprog.hex` | Intel HEX format |
 | `iceflashprog.dfu` | DFU image with suffix (for `dfu-util`) |
-| `iceflashprog.map` | Linker map file |
 
 ### Memory layout
 
@@ -88,7 +88,7 @@ An alternative `SPI_MAX_FREQ` compile-time option reconfigures the PLL to produc
 
 The firmware runs a cooperative polling loop. On each iteration, `spi_flash_task()` is called first to process any pending SPI flash operations (including DMA completion and status register polling via TIM3). If no flash work is pending, `usbd_task()` processes USB events. The watchdog is reloaded on every USB SOF frame (1 ms interval) as long as no write-in-progress flag is set, ensuring the device resets if the host stops communicating.
 
-### Main source files
+### Source files
 
 | File | Purpose |
 |------|---------|
@@ -148,7 +148,7 @@ Reports larger than the 64-byte endpoint size are transferred in multiple USB tr
 | 6 | Erase Block | 3-byte address | (none) |
 | 7 | Erase Chip | (unused) | (none) |
 
-The Power Up command also de-asserts the FPGA reset line (CRST), and Power Down re-asserts it. The host must send Power Up before any flash operations.
+The Power Up command also asserts the FPGA configuration reset (CRST), holding the FPGA in reset while the flash is accessed. Power Down de-asserts CRST, releasing the FPGA to configure from flash. The host must send Power Up before any flash operations.
 
 ### Flash page write (report ID 1)
 

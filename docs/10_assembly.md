@@ -8,6 +8,14 @@ iceflashprog, front view
 ![iceflashprog, back view](../share/images/iceflashprog-back.jpg)
 iceflashprog, back view
 
+## Parts list
+
+| Part | Quantity | Description |
+|------|----------|-------------|
+| [stm32f0-usbd-devboard](@@/p/stm32-usbd-devboards/stm32f0/) | 1 | Base controller board |
+| 10-wire flat cable | 1 | Connects devboard to the FPGA board's UEXT header |
+| M2 self-tapping screws | 8 | For the 3D-printed case (4 for devboard mounting, 4 for case assembly) |
+
 ## Wiring
 
 A 10-wire flat cable connects the development board to the UEXT header on the FPGA board. The cable can be soldered directly to the devboard pads, or standard header pins with DuPont cables can be used instead.
@@ -28,7 +36,7 @@ A 10-wire flat cable connects the development board to the UEXT header on the FP
 > [!WARNING]
 > The solder jumper connected to Pin 1 of the UEXT header, which is open by default, should **not** be closed. The stm32f0-usbd-devboard is powered by its USB port.
 
-## LED pattern
+## LED behavior
 
 When the device is powered on (or reset by the USB host or the internal watchdog), the LED stays on until the device is successfully enumerated by the USB host. After enumeration, the LED turns on whenever there is SPI data being transferred to the flash memory.
 
